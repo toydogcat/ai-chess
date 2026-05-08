@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, RotateCcw, Cpu, User, Info, Settings, LayoutGrid, Tablet as Table } from 'lucide-react';
+import { Trophy, RotateCcw, Cpu, User, Info, Settings, LayoutGrid, Tablet as Table, Volume2, VolumeX } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -25,6 +25,31 @@ export default function App() {
   const [isAiEnabled, setIsAiEnabled] = useState(true);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [playerColor, setPlayerColor] = useState<PieceColor | null>(null); // For Banqi first-flip rule
+  
+  const [isMuted, setIsMuted] = useState(true);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(`${import.meta.env.BASE_URL || '/'}Before_the_Final_Charge.mp3`);
+    audio.loop = true;
+    audio.volume = 0.35;
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+    };
+  }, []);
+
+  const toggleMute = () => {
+    if (!audioRef.current) return;
+    if (isMuted) {
+      audioRef.current.play().catch(err => console.log("Playback failed:", err));
+      setIsMuted(false);
+    } else {
+      audioRef.current.pause();
+      setIsMuted(true);
+    }
+  };
 
   const initGame = useCallback((newMode: GameMode) => {
     const board = GameEngine.initBoard(newMode);
@@ -197,6 +222,20 @@ export default function App() {
           </div>
           
           <div className="flex gap-2">
+            <button 
+              onClick={toggleMute}
+              className={cn(
+                "p-2 rounded border transition-all relative group",
+                !isMuted ? "bg-red-900/20 text-red-400 border-red-900/50 shadow-[0_0_8px_rgba(220,38,38,0.3)]" : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:border-zinc-500"
+              )}
+              title={!isMuted ? "暫停音樂" : "播放背景音樂"}
+            >
+              {!isMuted ? (
+                <Volume2 size={16} className="animate-pulse" />
+              ) : (
+                <VolumeX size={16} />
+              )}
+            </button>
             <button 
               onClick={() => setIsAiEnabled(!isAiEnabled)}
               className={cn(
