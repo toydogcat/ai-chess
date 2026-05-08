@@ -176,20 +176,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-serif flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="h-16 flex items-center justify-between px-8 bg-zinc-950 border-b border-zinc-800">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold tracking-widest text-zinc-100 flex items-center gap-2">
+      <header className="min-h-16 py-3 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 bg-zinc-950 border-b border-zinc-800 gap-3 shrink-0">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-center md:text-left">
+          <h1 className="text-xl md:text-2xl font-bold tracking-widest text-zinc-100 flex items-center gap-2">
             玄冥棋弈 
-            <span className="text-zinc-500 font-light text-base">| {mode === GameMode.DARK ? '暗棋模式' : '正規模式'}</span>
+            <span className="text-zinc-500 font-light text-sm md:text-base">| {mode === GameMode.DARK ? '暗棋模式' : '正規模式'}</span>
           </h1>
-          <span className="px-3 py-1 bg-zinc-800 text-[10px] text-zinc-400 rounded-full border border-zinc-700 uppercase tracking-widest font-mono">
+          <span className="px-2.5 py-0.5 bg-zinc-800 text-[9px] text-zinc-400 rounded-full border border-zinc-700 uppercase tracking-widest font-mono">
             v2.4.0 AI {isAiEnabled ? 'Enabled' : 'Disabled'}
           </span>
         </div>
         
-        <div className="flex items-center gap-6">
-          <div className="flex items-center text-sm">
-            <span className={cn("inline-block w-2.5 h-2.5 rounded-full mr-2", gameState.turn === PieceColor.RED ? "bg-red-500 shadow-[0_0_8px_#ef4444]" : "bg-zinc-500")} />
+        <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+          <div className="flex items-center text-xs md:text-sm">
+            <span className={cn("inline-block w-2 h-2 rounded-full mr-2", gameState.turn === PieceColor.RED ? "bg-red-500 shadow-[0_0_8px_#ef4444]" : "bg-zinc-500")} />
             <span className="text-zinc-400">當前回合：</span>
             <span className={cn("font-bold ml-1", gameState.turn === PieceColor.RED ? "text-red-500" : "text-zinc-300")}>
               {gameState.turn === PieceColor.RED ? '紅方' : '黑方'} {isAiEnabled && gameState.turn !== playerColor ? '(AI)' : (gameState.turn === playerColor ? '(玩家)' : '')}
@@ -205,23 +205,23 @@ export default function App() {
               )}
               title="切換人機模式"
             >
-              <Cpu size={18} />
+              <Cpu size={16} />
             </button>
             <button 
               onClick={() => initGame(mode)}
               className="p-2 bg-zinc-800 text-zinc-300 border border-zinc-700 rounded hover:bg-zinc-700 transition"
               title="重啟局"
             >
-              <RotateCcw size={18} />
+              <RotateCcw size={16} />
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden bg-zinc-900">
+      <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden bg-zinc-900">
         {/* Left Sidebar - Capture & AI Status */}
-        <aside className="w-72 p-6 flex flex-col gap-6 border-r border-zinc-800 bg-zinc-950 overflow-y-auto">
+        <aside className="w-full lg:w-72 p-6 flex flex-col gap-6 border-b lg:border-b-0 lg:border-r border-zinc-800 bg-zinc-950 shrink-0 order-2 lg:order-1">
           <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-xl">
             <h3 className="text-zinc-500 uppercase text-[10px] font-bold tracking-[0.2em] mb-4">俘虜清單</h3>
             <div className="space-y-4">
@@ -291,7 +291,7 @@ export default function App() {
         </aside>
 
         {/* Center - Board */}
-        <section className="flex-1 flex items-center justify-center p-8 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-800 to-zinc-950 relative">
+        <section className="flex-1 flex items-center justify-center p-4 md:p-8 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-800 to-zinc-950 relative min-h-[480px] lg:min-h-0 order-1 lg:order-2">
           <div className="relative">
             <Board 
               gameState={gameState} 
@@ -333,7 +333,7 @@ export default function App() {
         </section>
 
         {/* Right Sidebar - History */}
-        <aside className="w-72 p-6 bg-zinc-950 border-l border-zinc-800 overflow-y-auto">
+        <aside className="w-full lg:w-72 p-6 bg-zinc-950 border-t lg:border-t-0 lg:border-l border-zinc-800 shrink-0 order-3 lg:order-3">
           <h3 className="text-zinc-500 uppercase text-[10px] font-bold tracking-[0.2em] mb-6">對局紀錄</h3>
           <div className="space-y-3">
             {gameState.history.length === 0 && (
