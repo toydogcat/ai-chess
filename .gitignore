@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# reference files and unzipped projects
+玄冥棋弈.zip
+玄冥棋弈/
+/dist
