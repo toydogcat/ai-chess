@@ -107,6 +107,7 @@ export function useChessMultiplayer(
       ...prev,
       isMultiplayerActive: false,
       connectionStatus: 'idle',
+      roomId: '',
       opponentId: '',
       opponentName: '',
       opponentOnline: false,
@@ -277,12 +278,12 @@ export function useChessMultiplayer(
     };
   };
 
-  // Host a Room
-  const createRoom = useCallback((roomCode: string) => {
+  // Host a Room with color preference
+  const createRoom = useCallback((roomCode: string, colorPreference: PieceColor = PieceColor.RED) => {
     disconnectAll();
     
     const roomId = roomCode.toUpperCase();
-    console.log(`Hosting P2P Room: ${roomId}`);
+    console.log(`Hosting P2P Room: ${roomId} with preference ${colorPreference}`);
 
     setMpState(prev => ({
       ...prev,
@@ -290,7 +291,7 @@ export function useChessMultiplayer(
       isHost: true,
       roomId,
       connectionStatus: 'connecting_mqtt',
-      myColor: gameStateRef.current.mode === GameMode.CLASSIC ? PieceColor.RED : null // Red in classic, null in Dark
+      myColor: gameStateRef.current.mode === GameMode.CLASSIC ? colorPreference : null // Red/Black in classic, null in Dark
     }));
 
     const client = mqtt.connect(MQTT_BROKER, {
@@ -322,11 +323,12 @@ export function useChessMultiplayer(
             opponentOnline: true
           }));
 
-          // Notify guest of Host details
+          // Notify guest of Host details and Host's chosen color
           client.publish(`luna/chess/${roomId}/lobby_sync`, JSON.stringify({
             hostId: playerId,
             hostName: playerName,
-            mode: gameStateRef.current.mode
+            mode: gameStateRef.current.mode,
+            hostColor: mpStateRef.current.myColor
           }));
 
           // Initiate WebRTC
@@ -357,6 +359,26 @@ export function useChessMultiplayer(
       console.error('Host MQTT error:', err);
     });
   }, [playerId, playerName, setupWebRTC, disconnectAll]);
+
+  // Dynamically change Host's color preference and sync Guest if they are already in the lobby
+  const setHostColorPreference = useCallback((color: PieceColor) => {
+    if (!mpStateRef.current.isHost) return;
+    
+    setMpState(prev => ({ 
+      ...prev, 
+      myColor: gameStateRef.current.mode === GameMode.CLASSIC ? color : null 
+    }));
+
+    // If guest is active or we are in MQTT lobby, broadcast sync
+    if (mqttClientRef.current && mpStateRef.current.roomId) {
+      mqttClientRef.current.publish(`luna/chess/${mpStateRef.current.roomId}/lobby_sync`, JSON.stringify({
+        hostId: playerId,
+        hostName: playerName,
+        mode: gameStateRef.current.mode,
+        hostColor: color
+      }));
+    }
+  }, [playerId, playerName]);
 
   // Join a Room
   const joinRoom = useCallback((roomCode: string) => {
@@ -399,7 +421,7 @@ export function useChessMultiplayer(
         const payload = JSON.parse(message.toString());
         
         if (topic === `luna/chess/${roomId}/lobby_sync`) {
-          console.log(`Lobby synchronized: Host is ${payload.hostName}`);
+          console.log(`Lobby synchronized: Host is ${payload.hostName}, hostColor is ${payload.hostColor}`);
           
           setMpState(prev => ({
             ...prev,
@@ -407,8 +429,10 @@ export function useChessMultiplayer(
             opponentName: payload.hostName,
             opponentOnline: true,
             connectionStatus: 'connecting_webrtc',
-            // Guest is Black in classic mode. Guest is null in Dark mode (first-flip decides)
-            myColor: payload.mode === GameMode.CLASSIC ? PieceColor.BLACK : null
+            // Guest is always the opposite of Host color
+            myColor: payload.mode === GameMode.CLASSIC 
+              ? (payload.hostColor === PieceColor.RED ? PieceColor.BLACK : PieceColor.RED) 
+              : null
           }));
 
           // Set client's local board mode to match the Host's
@@ -486,6 +510,7 @@ export function useChessMultiplayer(
     joinRoom,
     sendPlayerAction,
     broadcastGameState,
+    setHostColorPreference,
     disconnectAll
   };
 }

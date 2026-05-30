@@ -86,6 +86,8 @@ export default function App() {
     initGame(GameMode.DARK);
   }, [initGame]);
 
+  const [hostColorPref, setHostColorPref] = useState<PieceColor>(PieceColor.RED);
+
   // Multiplayer Hook
   const {
     mpState,
@@ -95,6 +97,7 @@ export default function App() {
     joinRoom,
     sendPlayerAction,
     broadcastGameState,
+    setHostColorPreference,
     disconnectAll
   } = useChessMultiplayer(
     gameState || {
@@ -356,7 +359,7 @@ export default function App() {
       setPlayerName(tempName.trim());
     }
     const generatedId = Math.random().toString(36).substring(2, 7).toUpperCase();
-    createRoom(generatedId);
+    createRoom(generatedId, hostColorPref);
   };
 
   const handleJoinRoomAction = (code?: string) => {
@@ -677,7 +680,7 @@ export default function App() {
                 </div>
               )}
 
-              {mpState.connectionStatus === 'lobby' ? (
+              {mpState.roomId === '' ? (
                 /* CREATE / JOIN CHOOSE FORM */
                 <div className="w-full space-y-6">
                   {/* Name Input */}
@@ -704,6 +707,37 @@ export default function App() {
                         <p className="text-[10px] text-zinc-500 leading-relaxed mb-4">
                           身為房主，生成一個專屬的 5 碼房間代碼與動態 QR Code。
                         </p>
+
+                        {/* Camp selection (only for Classic mode) */}
+                        {mode === GameMode.CLASSIC && (
+                          <div className="mb-4">
+                            <span className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold block mb-1.5">房主陣營選擇</span>
+                            <div className="grid grid-cols-2 gap-1.5 p-0.5 bg-zinc-900 border border-zinc-800 rounded-lg">
+                              <button
+                                onClick={() => setHostColorPref(PieceColor.RED)}
+                                className={cn(
+                                  "py-1.5 text-[10px] font-bold rounded tracking-wider transition-all cursor-pointer",
+                                  hostColorPref === PieceColor.RED 
+                                    ? "bg-red-500/20 text-red-400 border border-red-500/30" 
+                                    : "text-zinc-500 hover:text-zinc-300"
+                                )}
+                              >
+                                紅方 (先手)
+                              </button>
+                              <button
+                                onClick={() => setHostColorPref(PieceColor.BLACK)}
+                                className={cn(
+                                  "py-1.5 text-[10px] font-bold rounded tracking-wider transition-all cursor-pointer",
+                                  hostColorPref === PieceColor.BLACK 
+                                    ? "bg-zinc-800 text-zinc-300 border border-zinc-700" 
+                                    : "text-zinc-500 hover:text-zinc-300"
+                                )}
+                              >
+                                黑方 (後手)
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={handleCreateRoomAction}
@@ -758,7 +792,40 @@ export default function App() {
                 /* IN PROCESS STATUS (HOST OR GUEST) */
                 <div className="w-full flex flex-col items-center py-4">
                   {mpState.isHost ? (
-                    <RoomQRCode roomId={mpState.roomId} />
+                    <>
+                      <RoomQRCode roomId={mpState.roomId} />
+                      
+                      {/* Host Color Preference toggle in lobby (Classic Chess only) */}
+                      {mode === GameMode.CLASSIC && !mpState.opponentId && (
+                        <div className="mt-4 w-full max-w-xs p-3.5 bg-zinc-950/60 border border-zinc-850 rounded-2xl flex flex-col items-center">
+                          <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-2">更改房主陣營</span>
+                          <div className="grid grid-cols-2 gap-1.5 w-full p-0.5 bg-zinc-900 border border-zinc-800 rounded-lg">
+                            <button
+                              onClick={() => setHostColorPreference(PieceColor.RED)}
+                              className={cn(
+                                "py-1.5 text-[9px] font-bold rounded tracking-wider transition-all cursor-pointer",
+                                mpState.myColor === PieceColor.RED 
+                                  ? "bg-red-500/20 text-red-400 border border-red-500/30" 
+                                  : "text-zinc-500 hover:text-zinc-300"
+                              )}
+                            >
+                              紅方 (先手)
+                            </button>
+                            <button
+                              onClick={() => setHostColorPreference(PieceColor.BLACK)}
+                              className={cn(
+                                "py-1.5 text-[9px] font-bold rounded tracking-wider transition-all cursor-pointer",
+                                mpState.myColor === PieceColor.BLACK 
+                                  ? "bg-zinc-800 text-zinc-300 border border-zinc-700" 
+                                  : "text-zinc-500 hover:text-zinc-300"
+                              )}
+                            >
+                              黑方 (後手)
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="flex flex-col items-center justify-center p-6 bg-zinc-900/80 border border-zinc-800 rounded-3xl backdrop-blur-xl max-w-sm w-full relative">
                       <RefreshCw size={28} className="text-red-500 animate-spin mb-4" />
